@@ -45,12 +45,12 @@ class _MedicineInventoryScreenState extends ConsumerState<MedicineInventoryScree
     return Scaffold(
       backgroundColor: AppColors.background,
       drawer: SideNavBar(
-        selectedIndex: 2, // Assuming index 2 is for Inventory
+        selectedIndex: 2,
         onItemSelected: (index) {},
       ),
       appBar: CustomAppBar(
-        title: 'My Inventory',
-        subtitle: 'Manage your stock and prices',
+        title: 'Inventory',
+        subtitle: 'Track your medicine stock',
         showDrawer: true,
         actions: [
           CustomAppBar.buildActionButton(
@@ -71,27 +71,42 @@ class _MedicineInventoryScreenState extends ConsumerState<MedicineInventoryScree
         children: [
           if (_isSearching)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding, vertical: 8),
-              child: Container(
-                decoration: AppCardStyles.sleekCard.copyWith(borderRadius: BorderRadius.circular(16)),
+              padding: const EdgeInsets.fromLTRB(AppSpacing.screenPadding, 8, AppSpacing.screenPadding, 16),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                decoration: AppCardStyles.sleekCard.copyWith(
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withAlpha(20),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
                 child: TextField(
                   controller: _searchController,
                   onChanged: (val) => ref.read(medicineProvider.notifier).searchInventory(val),
-                  decoration: const InputDecoration(
-                    hintText: 'Search in inventory...',
-                    prefixIcon: Icon(Iconsax.search_normal, color: AppColors.primary),
+                  style: AppTextStyles.description.copyWith(color: AppColors.textPrimary),
+                  decoration: InputDecoration(
+                    hintText: 'Search by medicine name...',
+                    hintStyle: AppTextStyles.caption,
+                    prefixIcon: const Icon(Iconsax.search_normal, color: AppColors.primary, size: 20),
                     border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 15),
                   ),
                 ),
               ),
             ),
           Expanded(
             child: state.isLoading && state.inventory.isEmpty
-                ? const Center(child: CircularProgressIndicator())
+                ? _buildLoadingState()
                 : state.error != null
-                    ? Center(child: Text(state.error!, style: const TextStyle(color: AppColors.error)))
+                    ? _buildErrorState(state.error!)
                     : state.filteredInventory.isEmpty
-                        ? const Center(child: Text('Inventory is empty.'))
+                        ? _buildEmptyState()
                         : RefreshIndicator(
                             onRefresh: () async {
                               final shopId = ref.read(authProvider).user?.shopId;
@@ -100,7 +115,8 @@ class _MedicineInventoryScreenState extends ConsumerState<MedicineInventoryScree
                               }
                             },
                             child: ListView.builder(
-                              padding: const EdgeInsets.all(AppSpacing.screenPadding),
+                              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
+                              physics: const BouncingScrollPhysics(),
                               itemCount: state.filteredInventory.length,
                               itemBuilder: (context, index) {
                                 final item = state.filteredInventory[index];
@@ -108,6 +124,59 @@ class _MedicineInventoryScreenState extends ConsumerState<MedicineInventoryScree
                               },
                             ),
                           ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return const Center(
+      child: CircularProgressIndicator(color: AppColors.primary),
+    );
+  }
+
+  Widget _buildErrorState(String error) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Iconsax.danger, size: 64, color: AppColors.error),
+          const SizedBox(height: 16),
+          Text(error, style: AppTextStyles.description.copyWith(color: AppColors.error)),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: () {
+              final shopId = ref.read(authProvider).user?.shopId;
+              if (shopId != null) ref.read(medicineProvider.notifier).fetchInventory(shopId);
+            },
+            child: const Text('Try Again'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withAlpha(10),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Iconsax.box, size: 64, color: AppColors.primary),
+          ),
+          const SizedBox(height: 24),
+          Text('Inventory is empty', style: AppTextStyles.subHeader),
+          const SizedBox(height: 8),
+          Text(
+            'Add medicines from the catalog to see them here.',
+            style: AppTextStyles.caption,
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -125,100 +194,163 @@ class _MedicineInventoryCard extends StatelessWidget {
     final medicine = item.medicine;
     if (medicine == null) return const SizedBox.shrink();
 
+    final bool inStock = item.status == 'in stock';
+
     return GestureDetector(
       onTap: () => context.push('/medicine-details', extra: item),
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(16),
-        decoration: AppCardStyles.sleekCard,
-        child: Row(
-          children: [
-            // Medicine Photo
-            Container(
-              width: 70,
-              height: 70,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                image: medicine.medicinePhoto != null
-                    ? DecorationImage(
-                        image: NetworkImage("${ApiUrl.baseUrl}/${medicine.medicinePhoto}"),
-                        fit: BoxFit.cover,
-                      )
-                    : null,
-              ),
-              child: medicine.medicinePhoto == null
-                  ? const Icon(Iconsax.health, color: AppColors.primary)
-                  : null,
-            ),
-            const SizedBox(width: 16),
-            
-            // Info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          medicine.medicineName,
-                          style: AppTextStyles.cardTitle.copyWith(fontSize: 16),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: item.status == 'in stock' 
-                              ? AppColors.success.withAlpha(20) 
-                              : AppColors.error.withAlpha(20),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          item.status == 'in stock' ? 'In Stock' : 'Out of Stock',
-                          style: AppTextStyles.caption.copyWith(
-                            color: item.status == 'in stock' ? AppColors.success : AppColors.error,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 10,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(medicine.medicineCategory, style: AppTextStyles.caption),
-                  const SizedBox(height: 8),
-                  
-                  // Price Breakdown
-                  Row(
-                    children: [
-                      Text(
-                        '₹${item.displayPrice.toStringAsFixed(2)}',
-                        style: AppTextStyles.cardTitle.copyWith(color: AppColors.primary, fontSize: 16),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '₹${medicine.mrp}',
-                        style: AppTextStyles.caption.copyWith(
-                          decoration: TextDecoration.lineThrough,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '${item.discountPercent}% OFF',
-                        style: AppTextStyles.caption.copyWith(
-                          color: AppColors.success,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+        decoration: AppCardStyles.sleekCard.copyWith(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(5),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
             ),
           ],
         ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Medicine Photo
+                Hero(
+                  tag: 'inv_${item.inventoryMedicineId}',
+                  child: Container(
+                    width: 100,
+                    decoration: BoxDecoration(
+                      color: AppColors.background,
+                      image: medicine.medicinePhoto != null
+                          ? DecorationImage(
+                              image: NetworkImage("${ApiUrl.baseUrl}/${medicine.medicinePhoto}"),
+                              fit: BoxFit.cover,
+                            )
+                          : null,
+                    ),
+                    child: medicine.medicinePhoto == null
+                        ? const Icon(Iconsax.health, color: AppColors.primary, size: 32)
+                        : null,
+                  ),
+                ),
+                
+                // Info Section
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                medicine.medicineName,
+                                style: AppTextStyles.cardTitle.copyWith(fontSize: 16),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            _buildStockBadge(inStock),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          medicine.medicineCategory,
+                          style: AppTextStyles.caption.copyWith(color: AppColors.textTertiary),
+                        ),
+                        const Spacer(),
+                        const SizedBox(height: 12),
+                        
+                        // Price & Discount Row
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Price',
+                                  style: AppTextStyles.caption.copyWith(fontSize: 10),
+                                ),
+                                Text(
+                                  '₹${item.displayPrice.toStringAsFixed(2)}',
+                                  style: AppTextStyles.cardTitle.copyWith(
+                                    color: AppColors.primary,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(width: 12),
+                            if (item.discountPercent > 0)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: AppColors.success.withAlpha(20),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  '${item.discountPercent.toInt()}% OFF',
+                                  style: AppTextStyles.caption.copyWith(
+                                    color: AppColors.success,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                
+                // Right Accent
+                Container(
+                  width: 4,
+                  color: inStock ? AppColors.primary : AppColors.error.withAlpha(150),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStockBadge(bool inStock) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: inStock ? AppColors.success.withAlpha(20) : AppColors.error.withAlpha(20),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: inStock ? AppColors.success.withAlpha(50) : AppColors.error.withAlpha(50),
+          width: 0.5,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            inStock ? Icons.check_circle : Icons.error,
+            size: 10,
+            color: inStock ? AppColors.success : AppColors.error,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            inStock ? 'IN STOCK' : 'OUT OF STOCK',
+            style: AppTextStyles.caption.copyWith(
+              color: inStock ? AppColors.success : AppColors.error,
+              fontWeight: FontWeight.w800,
+              fontSize: 9,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
       ),
     );
   }
