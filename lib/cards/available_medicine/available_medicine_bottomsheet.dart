@@ -12,154 +12,207 @@ class AvailableMedicineBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: const BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Drag Handle
-          Center(
-            child: Container(
-              width: 40,
-              height: 5,
-              margin: const EdgeInsets.only(bottom: 24),
-              decoration: BoxDecoration(
-                color: AppColors.divider,
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
+    return DraggableScrollableSheet(
+      initialChildSize: 0.5,
+      minChildSize: 0.4,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (context, scrollController) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          decoration: const BoxDecoration(
+            color: AppColors.background,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
           ),
-
-          // Header Row with Image
-          Row(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              GestureDetector(
-                onTap: () {
-                  if (medicine.medicinePhoto != null &&
-                      medicine.medicinePhoto!.isNotEmpty) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => AvailableMedicinePreviewCard(
-                          imageUrl: medicine.medicinePhoto!,
-                        ),
-                      ),
-                    );
-                  }
-                },
+              // Drag Handle
+              Center(
                 child: Container(
-                  width: 100,
-                  height: 100,
+                  width: 40,
+                  height: 5,
+                  margin: const EdgeInsets.only(bottom: 24),
                   decoration: BoxDecoration(
-                    color: AppColors.background,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppColors.divider),
-                    image:
-                        medicine.medicinePhoto != null &&
-                            medicine.medicinePhoto!.isNotEmpty
-                        ? DecorationImage(
-                            image: NetworkImage(
-                              "${ApiUrl.baseUrl}/${medicine.medicinePhoto}",
-                            ),
-                            fit: BoxFit.cover,
-                          )
-                        : null,
+                    color: AppColors.divider,
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  child:
-                      medicine.medicinePhoto == null ||
-                          medicine.medicinePhoto!.isEmpty
-                      ? const Icon(
-                          Iconsax.health,
-                          color: AppColors.primary,
-                          size: 40,
-                        )
-                      : null,
                 ),
               ),
-              const SizedBox(width: 20),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      medicine.medicineName,
-                      style: AppTextStyles.header.copyWith(fontSize: 22),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
+
+              // Header Row with Image
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      if (medicine.medicinePhoto != null &&
+                          medicine.medicinePhoto!.isNotEmpty) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => AvailableMedicinePreviewCard(
+                              imageUrl: medicine.medicinePhoto!,
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                    child: Container(
+                      width: 100,
+                      height: 100,
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withAlpha(20),
-                        borderRadius: BorderRadius.circular(8),
+                        color: AppColors.background,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: AppColors.divider),
+                        image: medicine.medicinePhoto != null &&
+                                medicine.medicinePhoto!.isNotEmpty
+                            ? DecorationImage(
+                                image: NetworkImage(
+                                  "${ApiUrl.baseUrl}/${medicine.medicinePhoto}",
+                                ),
+                                fit: BoxFit.cover,
+                              )
+                            : null,
                       ),
-                      child: Text(
-                        medicine.medicineCategory,
-                        style: AppTextStyles.caption.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      child: medicine.medicinePhoto == null ||
+                              medicine.medicinePhoto!.isEmpty
+                          ? const Icon(
+                              Iconsax.health,
+                              color: AppColors.primary,
+                              size: 40,
+                            )
+                          : null,
                     ),
-                    const SizedBox(height: 12),
-                    Text(
-                      '₹${medicine.mrp.toStringAsFixed(2)}',
-                      style: AppTextStyles.header.copyWith(
-                        color: AppColors.primary,
-                        fontSize: 24,
+                  ),
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          medicine.medicineName,
+                          style: AppTextStyles.header.copyWith(fontSize: 22),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withAlpha(20),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            medicine.medicineCategory,
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          '₹${medicine.mrp.toStringAsFixed(2)}',
+                          style: AppTextStyles.header.copyWith(
+                            color: AppColors.primary,
+                            fontSize: 24,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              const Divider(color: AppColors.divider),
+              const SizedBox(height: 16),
+
+              // Details
+              Expanded(
+                child: SingleChildScrollView(
+                  controller: scrollController,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildDetailRow(
+                        Iconsax.box,
+                        'Quantity',
+                        medicine.medicineQuantity,
                       ),
+                      if (medicine.medicineComposition != null &&
+                          medicine.medicineComposition!.isNotEmpty)
+                        _buildDetailRow(
+                          Iconsax.health,
+                          'Composition',
+                          medicine.medicineComposition!,
+                        ),
+                      if (medicine.medicineDescription != null &&
+                          medicine.medicineDescription!.isNotEmpty)
+                        _buildDetailRow(
+                          Iconsax.note_text,
+                          'Description',
+                          medicine.medicineDescription!,
+                        ),
+                      if (medicine.precautions != null &&
+                          medicine.precautions!.isNotEmpty)
+                        _buildPrecautions(medicine.precautions!),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Premium Add Button
+              Container(
+                width: double.infinity,
+                height: 60,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppColors.primary, AppColors.primaryAccent],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withAlpha(80),
+                      blurRadius: 15,
+                      offset: const Offset(0, 8),
                     ),
                   ],
+                ),
+                child: ElevatedButton(
+                  onPressed: () {
+                    // Logic to add to inventory
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Iconsax.add_square, color: Colors.white, size: 22),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Add to My Inventory',
+                        style: AppTextStyles.cardTitle.copyWith(
+                          color: Colors.white,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 24),
-          const Divider(color: AppColors.divider),
-          const SizedBox(height: 16),
-
-          // Details
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildDetailRow(
-                    Iconsax.box,
-                    'Quantity',
-                    medicine.medicineQuantity,
-                  ),
-                  if (medicine.medicineComposition != null &&
-                      medicine.medicineComposition!.isNotEmpty)
-                    _buildDetailRow(
-                      Iconsax.health,
-                      'Composition',
-                      medicine.medicineComposition!,
-                    ),
-                  if (medicine.medicineDescription != null &&
-                      medicine.medicineDescription!.isNotEmpty)
-                    _buildDetailRow(
-                      Iconsax.note_text,
-                      'Description',
-                      medicine.medicineDescription!,
-                    ),
-                  if (medicine.precautions != null &&
-                      medicine.precautions!.isNotEmpty)
-                    _buildPrecautions(medicine.precautions!),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
